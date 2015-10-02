@@ -1,0 +1,14 @@
+build:
+	make -C build
+
+generate:
+	make -C build clean
+	premake4 clean
+	premake4 gmake
+
+execute:
+	./build/emulator roms/MAZE
+
+.PHONY: build generate execute
+.IGNORE:
+.SILENT:

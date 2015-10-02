@@ -1,0 +1,3 @@
+-DSMN8_DEBUG
+-Isrc
+-I/usr/include/SDL2
