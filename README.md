@@ -2,6 +2,9 @@ Simon8
 ======
 Chip8 disassembler and emulator.
 
+![MAZE](pix/maze.png)
+![PONG2](pix/pong2.png)
+
 Getting Started
 ---------------
 You'll need a C compiler (i.e gcc or clang), SDL2 and premake4.
