@@ -12,6 +12,11 @@ solution "smn8"
     end
   end
 
+  newoption {
+    trigger     = "with-audio",
+    description = "Enables support for audio"
+  }
+
   location "build"
   objdir "build"
   targetdir "build"
@@ -25,6 +30,9 @@ solution "smn8"
 
   configuration "release"
     defines { "SMN8_NDEBUG" }
+
+  configuration "with-audio"
+    defines { "HAVE_AUDIO" }
 
   configuration "gmake"
     buildoptions { "-O3", "-funroll-loops" }

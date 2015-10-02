@@ -14,6 +14,16 @@ premake4 gmake
 make -C build
 ```
 
+Alternatively, with audio support enabled:
+
+```bash
+premake4 --with-audio gmake
+make -C build
+```
+
+**WARNING: The beeps can be loud, adjust your audio volume before launching
+any roms.**
+
 ```bash
 build/disasm roms/MAZE
 build/emulator roms/MAZE
