@@ -29,7 +29,7 @@ build/disasm roms/MAZE
 build/emulator roms/MAZE
 ```
 
-On the other hand, if you want support for *arrow keys* you can do compile with:
+On the other hand, if you want support for *arrow keys*:
 
 ```bash
 premake4 --with-arrow-keys gmake
