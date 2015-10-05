@@ -29,6 +29,15 @@ build/disasm roms/MAZE
 build/emulator roms/MAZE
 ```
 
+On the other hand, if you want support for *arrow keys* you can do compile with:
+
+```bash
+premake4 --with-arrow-keys gmake
+make -C build
+```
+
+This makes playing the *TETRIS* **ROM** fully enjoyable.
+
 ROMS
 ----
 The **ROMS** that have been included have been placed into the

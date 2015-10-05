@@ -173,6 +173,27 @@ int emulate(smn8_rom *rom)
 						else
 							c = SMN8_VM_KEY_MAX;
 
+#ifdef HAVE_ARROW_KEYS
+						if(c == SMN8_VM_KEY_MAX)
+						{
+							switch(ev.key.keysym.sym)
+							{
+								case SDLK_UP:
+									c = SMN8_VM_KEY_4;
+									break;
+								case SDLK_DOWN:
+									c = SMN8_VM_KEY_7;
+									break;
+								case SDLK_LEFT:
+									c = SMN8_VM_KEY_5;
+									break;
+								case SDLK_RIGHT:
+									c = SMN8_VM_KEY_6;
+									break;
+							}
+						}
+#endif
+
 						smn8_vm_set_key(vm, c, SDL_KEYUP - ev.type);
 					}
 					break;

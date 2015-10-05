@@ -16,6 +16,10 @@ solution "smn8"
     trigger     = "with-audio",
     description = "Enables support for audio"
   }
+  newoption {
+    trigger     = "with-arrow-keys",
+    description = "Enables support for arrow keys"
+  }
 
   location "build"
   objdir "build"
@@ -33,6 +37,9 @@ solution "smn8"
 
   configuration "with-audio"
     defines { "HAVE_AUDIO" }
+
+  configuration "with-arrow-keys"
+    defines { "HAVE_ARROW_KEYS" }
 
   configuration "gmake"
     buildoptions { "-O3", "-funroll-loops" }
