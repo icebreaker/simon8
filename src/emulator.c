@@ -18,7 +18,9 @@ typedef enum
 } COLORS;
 
 int emulate(smn8_rom *rom);
+#ifdef HAVE_AUDIO
 void audio(void *user_data, unsigned char *stream, int len);
+#endif
 void print_version(const char *name);
 void print_usage(const char *name);
 int print_version_or_usage(const char *argv[]);
@@ -249,6 +251,7 @@ int emulate(smn8_rom *rom)
 	return EXIT_SUCCESS;
 }
 
+#ifdef HAVE_AUDIO
 void audio(void *user_data, unsigned char *stream, int len)
 {
 	int i;
@@ -257,6 +260,7 @@ void audio(void *user_data, unsigned char *stream, int len)
 	for(i = 0; i < len; i++)
 		*stream++ = sin(i * 127) * 64;
 }
+#endif
 
 void print_version(const char *name)
 {
