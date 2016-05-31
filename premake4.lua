@@ -20,6 +20,10 @@ solution "smn8"
     trigger     = "with-arrow-keys",
     description = "Enables support for arrow keys"
   }
+  newoption {
+    trigger     = "with-lime",
+    description = "Enables 'lime' as foreground color"
+  }
 
   location "build"
   objdir "build"
@@ -40,6 +44,9 @@ solution "smn8"
 
   configuration "with-arrow-keys"
     defines { "HAVE_ARROW_KEYS" }
+
+  configuration "with-lime"
+    defines { "HAVE_LIME" }
 
   configuration "gmake"
     buildoptions { "-O3", "-funroll-loops" }

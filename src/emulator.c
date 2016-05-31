@@ -7,8 +7,6 @@
 #define WIDTH SMN8_VGA_WIDTH * SCALE
 #define HEIGHT SMN8_VGA_HEIGHT * SCALE
 
-/* #define COLOR_FG_LIME 0xFF */
-
 #define VERSION_STRING "1.0.0"
 
 typedef enum
@@ -131,8 +129,8 @@ int emulate(smn8_rom *rom)
 
 	colors[COLOR_BG] = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
 
-#ifdef COLOR_FG_LIME
-	colors[COLOR_FG] = SDL_MapRGB(screen->format, 0x00, COLOR_FG_LIME, 0x00);
+#ifdef HAVE_LIME
+	colors[COLOR_FG] = SDL_MapRGB(screen->format, 0x00, 0xFF, 0x00);
 #else
 	colors[COLOR_FG] = SDL_MapRGB(screen->format, 0xFF, 0xFF, 0xFF);
 #endif
