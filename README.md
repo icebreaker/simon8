@@ -58,7 +58,7 @@ Contribute
 
 License
 -------
-Copyright (c) 2015, Mihail Szabolcs
+Copyright (c) 2015-2017, Mihail Szabolcs
 
 Simon8 is provided **as-is** under the **MIT** license.
 For more information see LICENSE.
