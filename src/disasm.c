@@ -10,15 +10,35 @@ int print_version_or_usage(const char *argv[]);
 int main(int argc, char *argv[])
 {
 	smn8_rom rom;
+	const char *filename;
 	FILE *fp;
 	int ret;
 
+#ifdef __EMSCRIPTEN__
+	filename = "roms/TETRIS";
+#else
 	if(argc > 1)
 	{
 		if(*argv[1] == '-')
 			return print_version_or_usage((const char **) argv);
 
-		fp = fopen(argv[1], "rb");
+		filename = argv[1];
+	}
+	else
+	{
+		filename = NULL;
+	}
+#endif
+
+	if(filename != NULL)
+	{
+		fp = fopen(filename, "rb");
+
+		if(fp == NULL)
+		{
+			fprintf(stderr, "Could not open ROM '%s'.\n", filename);
+			return EXIT_FAILURE;
+		}
 	}
 	else
 	{

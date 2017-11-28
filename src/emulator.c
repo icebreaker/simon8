@@ -1,6 +1,10 @@
 #include "smn8/vm.h"
 #include <SDL.h>
 
+#ifdef __EMSCRIPTEN__
+	#include <emscripten.h>
+#endif
+
 #define SCALE 20
 #define INV_SCALE 1.0f / (float) SCALE
 
@@ -13,7 +17,25 @@ typedef enum
 {
 	COLOR_BG = 0,
 	COLOR_FG = 1
-} COLORS;
+} color;
+
+typedef struct
+{
+#ifndef __EMSCRIPTEN__
+	unsigned int ticks;
+#endif
+
+	SDL_Window *window;
+	SDL_Surface *screen;
+	unsigned int colors[2];
+	smn8_vm *vm;
+} emulator_state;
+
+#ifdef __EMSCRIPTEN__
+void tick(void *data);
+#else
+int tick(void *data);
+#endif
 
 int emulate(smn8_rom *rom);
 #ifdef HAVE_AUDIO
@@ -26,15 +48,35 @@ int print_version_or_usage(const char *argv[]);
 int main(int argc, char *argv[])
 {
 	smn8_rom rom;
+	const char *filename;
 	FILE *fp;
 	int ret;
 
+#ifdef __EMSCRIPTEN__
+	filename = "roms/TETRIS";
+#else
 	if(argc > 1)
 	{
 		if(*argv[1] == '-')
 			return print_version_or_usage((const char **) argv);
 
-		fp = fopen(argv[1], "rb");
+		filename = argv[1];
+	}
+	else
+	{
+		filename = NULL;
+	}
+#endif
+
+	if(filename != NULL)
+	{
+		fp = fopen(filename, "rb");
+
+		if(fp == NULL)
+		{
+			fprintf(stderr, "Could not open ROM '%s'.\n", filename);
+			return EXIT_FAILURE;
+		}
 	}
 	else
 	{
@@ -49,33 +91,138 @@ int main(int argc, char *argv[])
 	return ret;
 }
 
-int emulate(smn8_rom *rom)
+#ifdef __EMSCRIPTEN__
+void tick(void *data)
+#else
+int tick(void *data)
+#endif
 {
-	int running;
-	unsigned int last_ticks, dt;
-	SDL_Window *window;
 	SDL_Event ev;
-	SDL_Surface *screen;
-	unsigned int *pixels;
-	unsigned int colors[2];
-	unsigned int dst_offset_y;
-	unsigned int src_offset_y;
+	smn8_vm *vm;
+	unsigned int *colors, *pixels;
 	unsigned short x, y, i;
-	unsigned int flags = SDL_INIT_VIDEO;
-
+#ifndef __EMSCRIPTEN__
+	unsigned int dt;
+#endif
 #ifdef HAVE_AUDIO
 	unsigned int st;
-	SDL_AudioSpec audio_spec;
+#endif
+	emulator_state *state = (emulator_state *) data;
+
+	vm = state->vm;
+	colors = state->colors;
+	pixels = state->screen->pixels;
+
+	while(SDL_PollEvent(&ev))
+	{
+		switch(ev.type)
+		{
+#ifndef __EMSCRIPTEN__
+			case SDL_QUIT:
+				return 0;
 #endif
 
-	smn8_vm _vm;
-	smn8_vm *vm = &_vm;
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				{
+					unsigned char c = ev.key.keysym.sym;
+
+					if(c >= '0' && c <= '9')
+						c -= '0';
+					else if(c >= 'a' && c <= 'f')
+						c = 10 + (c - 'a');
+#ifndef __EMSCRIPTEN__
+					else if(c == 27)
+						return 0;
+#endif
+					else
+						c = SMN8_VM_KEY_MAX;
+
+#ifdef HAVE_ARROW_KEYS
+					if(c == SMN8_VM_KEY_MAX)
+					{
+						switch(ev.key.keysym.sym)
+						{
+							case SDLK_UP:
+								c = SMN8_VM_KEY_4;
+								break;
+							case SDLK_DOWN:
+								c = SMN8_VM_KEY_7;
+								break;
+							case SDLK_LEFT:
+								c = SMN8_VM_KEY_5;
+								break;
+							case SDLK_RIGHT:
+								c = SMN8_VM_KEY_6;
+								break;
+						}
+					}
+#endif
+
+					smn8_vm_set_key(vm, c, SDL_KEYUP - ev.type);
+				}
+				break;
+		}
+	}
+
+	for(y = 0; y < HEIGHT; y++)
+	{
+		unsigned int dst_offset_y = y * WIDTH;
+		unsigned int src_offset_y = smn8_vm_get_pixel_offset(vm, (unsigned char) (y * INV_SCALE));
+
+		for(x = 0; x < WIDTH; x++)
+			pixels[x + dst_offset_y] = colors[smn8_vm_get_pixel_with_offset(vm, (unsigned char) (x * INV_SCALE), src_offset_y)];
+	}
+
+	SDL_UpdateWindowSurface(state->window);
+	
+	for(i = 0; i < SMN8_VM_CYCLES; i++)
+		smn8_vm_tick_cycle(state->vm);
 
 #ifdef HAVE_AUDIO
-	flags |= SDL_INIT_AUDIO;
+	st = smn8_vm_get_sound_timer(vm);
+#endif
+	smn8_vm_tick_timer(vm);
+
+#ifdef HAVE_AUDIO
+	if(st > 0)
+	{
+		if(smn8_vm_get_sound_timer(vm) == 0)
+			SDL_PauseAudio(1);
+		else
+			SDL_PauseAudio(0);
+	}
 #endif
 
-	if(SDL_Init(flags) != 0)
+#ifndef __EMSCRIPTEN__
+	dt = SDL_GetTicks() - state->ticks;
+
+	if(dt < SMN8_TIMER_HZ_IN_MS)
+		SDL_Delay(SMN8_TIMER_HZ_IN_MS - dt);
+
+	state->ticks = SDL_GetTicks();
+#endif
+
+#ifndef __EMSCRIPTEN__
+	return 1;
+#endif
+}
+
+int emulate(smn8_rom *rom)
+{
+	SDL_Window *window;
+	SDL_Surface *screen;
+#ifdef HAVE_AUDIO
+	SDL_AudioSpec audio_spec;
+#endif
+	smn8_vm vm;
+	emulator_state state;
+
+#ifdef HAVE_AUDIO
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+#else
+	if(SDL_Init(SDL_INIT_VIDEO) != 0)
+#endif
 	{
 		fprintf(stderr, "Failed to initialize SDL: %s\n", SDL_GetError());
 		return EXIT_FAILURE;
@@ -125,21 +272,26 @@ int emulate(smn8_rom *rom)
 		return EXIT_FAILURE;
 	}
 
-	pixels = screen->pixels;
-
-	colors[COLOR_BG] = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
+	state.colors[COLOR_BG] = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
 
 #ifdef HAVE_LIME
-	colors[COLOR_FG] = SDL_MapRGB(screen->format, 0x00, 0xFF, 0x00);
+	state.colors[COLOR_FG] = SDL_MapRGB(screen->format, 0x00, 0xFF, 0x00);
 #else
-	colors[COLOR_FG] = SDL_MapRGB(screen->format, 0xFF, 0xFF, 0xFF);
+	state.colors[COLOR_FG] = SDL_MapRGB(screen->format, 0xFF, 0xFF, 0xFF);
 #endif
 
-	SDL_FillRect(screen, NULL, colors[COLOR_BG]);
+	SDL_FillRect(screen, NULL, state.colors[COLOR_BG]);
 
-	if(!smn8_vm_init(vm, rom))
+	state.vm = &vm;
+	state.screen = screen;
+	state.window = window;
+#ifndef __EMSCRIPTEN__
+	state.ticks = SDL_GetTicks();
+#endif
+
+	if(!smn8_vm_init(&vm, rom))
 	{
-		smn8_vm_clear(vm);
+		smn8_vm_clear(&vm);
 		SDL_DestroyWindow(window);
 #ifdef HAVE_AUDIO
 		SDL_CloseAudio();
@@ -147,105 +299,24 @@ int emulate(smn8_rom *rom)
 		SDL_Quit();
 	}
 
-	last_ticks = SDL_GetTicks();
-
-	for(running = 1; running == 1; /* ; */)
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop_arg(tick, &state, 0, 1);
+#else
+	for(;;)
 	{
-		while(SDL_PollEvent(&ev))
-		{
-			switch(ev.type)
-			{
-				case SDL_QUIT:
-					running = 0;
-					break;
-
-				case SDL_KEYDOWN:
-				case SDL_KEYUP:
-					{
-						unsigned char c = ev.key.keysym.sym;
-
-						if(c >= '0' && c <= '9')
-							c -= '0';
-						else if(c >= 'a' && c <= 'f')
-							c = 10 + (c - 'a');
-						else if(c == 27)
-							running = !(c = SMN8_VM_KEY_MAX);
-						else
-							c = SMN8_VM_KEY_MAX;
-
-#ifdef HAVE_ARROW_KEYS
-						if(c == SMN8_VM_KEY_MAX)
-						{
-							switch(ev.key.keysym.sym)
-							{
-								case SDLK_UP:
-									c = SMN8_VM_KEY_4;
-									break;
-								case SDLK_DOWN:
-									c = SMN8_VM_KEY_7;
-									break;
-								case SDLK_LEFT:
-									c = SMN8_VM_KEY_5;
-									break;
-								case SDLK_RIGHT:
-									c = SMN8_VM_KEY_6;
-									break;
-							}
-						}
-#endif
-
-						smn8_vm_set_key(vm, c, SDL_KEYUP - ev.type);
-					}
-					break;
-			}
-		}
-
-		for(y = 0; y < HEIGHT; y++)
-		{
-			dst_offset_y = y * WIDTH;
-			src_offset_y = smn8_vm_get_pixel_offset(vm, (unsigned char) (y * INV_SCALE));
-
-			for(x = 0; x < WIDTH; x++)
-				pixels[x + dst_offset_y] = colors[smn8_vm_get_pixel_with_offset(vm,
-												  (unsigned char) (x * INV_SCALE), 
-												  src_offset_y)];
-		}
-
-		SDL_UpdateWindowSurface(window);
-		
-		for(i = 0; i < SMN8_VM_CYCLES; i++)
-			smn8_vm_tick_cycle(vm);
-
-#ifdef HAVE_AUDIO
-		st = smn8_vm_get_sound_timer(vm);
-#endif
-		smn8_vm_tick_timer(vm);
-
-#ifdef HAVE_AUDIO
-		if(st > 0)
-		{
-			if(smn8_vm_get_sound_timer(vm) == 0)
-				SDL_PauseAudio(1);
-			else
-				SDL_PauseAudio(0);
-		}
-#endif
-
-		dt = SDL_GetTicks() - last_ticks;
-
-		if(dt < SMN8_TIMER_HZ_IN_MS)
-			SDL_Delay(SMN8_TIMER_HZ_IN_MS - dt);
-	
-		last_ticks = SDL_GetTicks();
+		if(!tick(&state))
+			break;
 	}
 
-	smn8_vm_clear(vm);
+	smn8_vm_clear(&vm);
 
 	SDL_DestroyWindow(window);
 #ifdef HAVE_AUDIO
 	SDL_CloseAudio();
 #endif
+
 	SDL_Quit();
+#endif
 	return EXIT_SUCCESS;
 }
 

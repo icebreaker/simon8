@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-us">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Simon8 - Chip 8 Emulator</title>
+		<style type="text/css">
+		body
+		{
+			width: 1280px;
+			margin: 0 auto;
+			padding-top: 100px;
+		}
+			
+		canvas
+		{
+			border: 0px none;
+			background-color: black;
+		}
+		</style>
+	</head>
+	<body>
+		<a href="https://github.com/icebreaker/simon8"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
+		<canvas id="canvas" width="1280" height="720" oncontextmenu="event.preventDefault()"></canvas>
+		<script type='text/javascript'>
+		var Module = {
+			preRun: [],
+			postRun: [],
+			print: (function() {
+				return function(text) {
+					if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+					console.log(text);
+				};
+			})(),
+			printErr: (function() {
+				return function(text) {
+					if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+					console.error(text);
+				};
+			})(),
+			canvas: (function() {
+				var canvas = document.getElementById('canvas');
+
+				// As a default initial behavior, pop up an alert when webgl context is lost. To make your
+				// application robust, you may want to override this behavior before shipping!
+				// See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+				canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+				return canvas;
+			})(),
+			setStatus: function(text) {
+				// nop
+			},
+			monitorRunDependencies: function(left) {
+				// nop
+			}
+		};
+		</script>
+		{{{ SCRIPT }}}
+		</div>
+	</body>
+</html>
