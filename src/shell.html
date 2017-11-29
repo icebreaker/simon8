@@ -56,7 +56,7 @@
 			}
 		};
 		var rom = window.location.href.match(/\?rom=(.*?)$/);
-		if(rom != null) Module['arguments'] = [rom[1]];
+		if(rom != null) Module['arguments'] = ["roms/" + rom[1].toUpperCase()];
 		</script>
 		{{{ SCRIPT }}}
 		</div>
