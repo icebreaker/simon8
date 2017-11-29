@@ -55,6 +55,8 @@
 				// nop
 			}
 		};
+		var rom = window.location.href.match(/\?rom=(.*?)$/);
+		if(rom != null) Module['arguments'] = [rom[1]];
 		</script>
 		{{{ SCRIPT }}}
 		</div>

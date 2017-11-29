@@ -81,7 +81,7 @@ solution "smn8"
 
 		configuration "web"
 			buildoptions { "-s USE_SDL=2", "-O2" }
-			linkoptions  { "--preload-file ../roms", "-s USE_SDL=2", "-O2" }
+			linkoptions  { "--preload-file ../roms", "--shell-file ../src/shell.html", "-s USE_SDL=2", "-O2" }
 			links { "GL", "SDL" }
 			targetextension ".html"
 

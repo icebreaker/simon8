@@ -52,9 +52,6 @@ int main(int argc, char *argv[])
 	FILE *fp;
 	int ret;
 
-#ifdef __EMSCRIPTEN__
-	filename = "roms/TETRIS";
-#else
 	if(argc > 1)
 	{
 		if(*argv[1] == '-')
@@ -64,9 +61,12 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
+#ifdef __EMSCRIPTEN__
+		filename = "roms/TETRIS";
+#else
 		filename = NULL;
-	}
 #endif
+	}
 
 	if(filename != NULL)
 	{
